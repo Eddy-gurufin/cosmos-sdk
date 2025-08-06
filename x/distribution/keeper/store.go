@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	gogotypes "github.com/cosmos/gogoproto/types"
 
@@ -436,4 +437,79 @@ func (k Keeper) DeleteAllValidatorSlashEvents(ctx context.Context) {
 	for ; iter.Valid(); iter.Next() {
 		store.Delete(iter.Key())
 	}
+}
+
+// GetModeratorAddress returns the current moderator address.
+func (k Keeper) GetModeratorAddress(ctx sdk.Context) (mod types.Moderator, err error) {
+	store := k.storeService.OpenKVStore(ctx)
+	bz, err := store.Get(types.ModeratorAddrKey)
+	if err != nil {
+		return types.Moderator{}, err
+	}
+	if len(bz) == 0 {
+		return types.Moderator{}, nil
+	}
+	err = k.cdc.Unmarshal(bz, &mod)
+	return mod, err
+}
+
+// SetModeratorAddress adds/updates the moderator address.
+func (k Keeper) SetModeratorAddress(ctx sdk.Context, mod types.Moderator) error {
+	store := k.storeService.OpenKVStore(ctx)
+	b, err := k.cdc.Marshal(&mod)
+	if err != nil {
+		return err
+	}
+
+	return store.Set(types.ModeratorAddrKey, b)
+}
+
+// GetBaseAddress returns the current base address
+func (k Keeper) GetBaseAddress(ctx sdk.Context) (base types.Base, err error) {
+	store := k.storeService.OpenKVStore(ctx)
+	bz, err := store.Get(types.BaseAddrKey)
+	if err != nil {
+		return types.Base{}, err
+	}
+	if len(bz) == 0 {
+		return types.Base{}, nil
+	}
+	err = k.cdc.Unmarshal(bz, &base)
+	return base, err
+}
+
+// SetBaseAddress adds/updates the base address.
+func (k Keeper) SetBaseAddress(ctx sdk.Context, base types.Base) error {
+	store := k.storeService.OpenKVStore(ctx)
+	b, err := k.cdc.Marshal(&base)
+	if err != nil {
+		return err
+	}
+
+	return store.Set(types.BaseAddrKey, b)
+}
+
+// get the ratio
+func (k Keeper) GetRatio(ctx sdk.Context) (ratio types.Ratio) {
+	store := k.storeService.OpenKVStore(ctx)
+	b, err := store.Get(types.RatioKey)
+	if err != nil {
+		panic(fmt.Sprintf("failed to get ratio from store: %v", err))
+	}
+	if b == nil {
+		return types.Ratio{} // or panic or return default
+	}
+
+	ratio = types.Ratio{}
+	if err := k.cdc.Unmarshal(b, &ratio); err != nil {
+		panic(fmt.Sprintf("failed to unmarshal ratio: %v", err))
+	}
+
+	return ratio
+}
+
+func (k Keeper) SetRatio(ctx sdk.Context, ratio types.Ratio) {
+	store := k.storeService.OpenKVStore(ctx)
+	b := k.cdc.MustMarshal(&ratio)
+	store.Set(types.RatioKey, b)
 }
