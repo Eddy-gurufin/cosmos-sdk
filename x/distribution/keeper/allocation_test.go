@@ -113,6 +113,12 @@ func TestAllocateTokensToManyValidators(t *testing.T) {
 	require.NoError(t, distrKeeper.Params.Set(ctx, disttypes.DefaultParams()))
 	require.NoError(t, distrKeeper.FeePool.Set(ctx, disttypes.InitialFeePool()))
 
+	err := distrKeeper.SetBaseAddress(ctx, disttypes.Base{Address: "cosmos1hd6fsrvnz6qkp87s3u86ludegq97agxsdkwzyh"})
+	require.NoError(t, err)
+	err = distrKeeper.SetModeratorAddress(ctx, disttypes.Moderator{Address: "cosmos1hd6fsrvnz6qkp87s3u86ludegq97agxsdkwzyh"})
+	require.NoError(t, err)
+	distrKeeper.SetRatio(testCtx.Ctx, disttypes.InitialRatio())
+
 	// create validator with 50% commission
 	valAddr0 := sdk.ValAddress(valConsAddr0)
 	val0, err := distrtestutil.CreateValidator(valConsPk0, math.NewInt(100))
@@ -166,7 +172,7 @@ func TestAllocateTokensToManyValidators(t *testing.T) {
 	require.True(t, val1CurrentRewards.Rewards.IsZero())
 
 	// allocate tokens as if both had voted and second was proposer
-	fees := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(100)))
+	fees := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(298)))
 	bankKeeper.EXPECT().GetAllBalances(gomock.Any(), feeCollectorAcc.GetAddress()).Return(fees)
 	bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), "fee_collector", disttypes.ModuleName, fees)
 
@@ -178,6 +184,9 @@ func TestAllocateTokensToManyValidators(t *testing.T) {
 			Validator: abciValB,
 		},
 	}
+
+	bankKeeper.EXPECT().BurnCoins(gomock.Any(), "distribution", gomock.Any()).Return(nil).AnyTimes()
+	bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	require.NoError(t, distrKeeper.AllocateTokens(ctx, 200, votes))
 
 	// 98 outstanding rewards (100 less 2 to community pool)
@@ -245,6 +254,12 @@ func TestAllocateTokensTruncation(t *testing.T) {
 	// reset fee pool
 	require.NoError(t, distrKeeper.FeePool.Set(ctx, disttypes.InitialFeePool()))
 	require.NoError(t, distrKeeper.Params.Set(ctx, disttypes.DefaultParams()))
+
+	err := distrKeeper.SetBaseAddress(ctx, disttypes.Base{Address: "cosmos1hd6fsrvnz6qkp87s3u86ludegq97agxsdkwzyh"})
+	require.NoError(t, err)
+	err = distrKeeper.SetModeratorAddress(ctx, disttypes.Moderator{Address: "cosmos1hd6fsrvnz6qkp87s3u86ludegq97agxsdkwzyh"})
+	require.NoError(t, err)
+	distrKeeper.SetRatio(ctx, disttypes.InitialRatio())
 
 	// create validator with 10% commission
 	valAddr0 := sdk.ValAddress(valConsAddr0)
@@ -325,6 +340,9 @@ func TestAllocateTokensTruncation(t *testing.T) {
 			Validator: abciValC,
 		},
 	}
+
+	bankKeeper.EXPECT().BurnCoins(gomock.Any(), "distribution", gomock.Any()).Return(nil).AnyTimes()
+	bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	require.NoError(t, distrKeeper.AllocateTokens(ctx, 31, votes))
 
 	val0OutstandingRewards, err = distrKeeper.GetValidatorOutstandingRewards(ctx, valAddr0)

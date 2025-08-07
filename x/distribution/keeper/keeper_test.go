@@ -43,6 +43,7 @@ func TestSetWithdrawAddr(t *testing.T) {
 
 	bankKeeper.EXPECT().BlockedAddr(withdrawAddr).Return(false).AnyTimes()
 	bankKeeper.EXPECT().BlockedAddr(distrAcc.GetAddress()).Return(true).AnyTimes()
+	bankKeeper.EXPECT().BurnCoins(gomock.Any(), distrAcc.GetAddress(), gomock.Any()).Return(nil).AnyTimes()
 
 	distrKeeper := keeper.NewKeeper(
 		encCfg.Codec,

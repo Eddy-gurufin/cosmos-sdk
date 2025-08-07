@@ -27,6 +27,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module/testutil"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
 
@@ -177,6 +178,12 @@ func GenesisStateWithSingleValidator(t *testing.T, app *SimApp) GenesisState {
 	genesisState, err = simtestutil.GenesisStateWithValSet(app.AppCodec(), genesisState, valSet, []authtypes.GenesisAccount{acc}, balances...)
 	require.NoError(t, err)
 
+	// update distribution moderator and base address
+	addrStr := "cosmos1hd6fsrvnz6qkp87s3u86ludegq97agxsdkwzyh"
+	distrGenesis := distrtypes.DefaultGenesisState()
+	distrGenesis.ModeratorAddress = addrStr
+	distrGenesis.BaseAddress = addrStr
+	genesisState[distrtypes.ModuleName] = app.AppCodec().MustMarshalJSON(distrGenesis)
 	return genesisState
 }
 
